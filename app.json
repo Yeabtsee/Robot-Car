@@ -1,4 +1,29 @@
 {
-  "name": "JosisRobotCar",
-  "displayName": "JosisRobotCar"
+  "expo": {
+    "name": "Josi's Robot Car",
+    "slug": "josis-robot-car",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "scheme": "josisrobotcar",
+    "assetBundlePatterns": ["**/*"],
+    "android": {
+      "package": "com.josi.robotcar",
+      "permissions": [
+        "BLUETOOTH",
+        "BLUETOOTH_ADMIN",
+        "BLUETOOTH_CONNECT",
+        "BLUETOOTH_SCAN",
+        "ACCESS_FINE_LOCATION"
+      ]
+    },
+    "ios": {
+      "bundleIdentifier": "com.josi.robotcar",
+      "infoPlist": {
+        "NSBluetoothAlwaysUsageDescription": "This app uses Bluetooth to connect to and control your robot car.",
+        "NSBluetoothPeripheralUsageDescription": "This app uses Bluetooth to connect to and control your robot car."
+      }
+    },
+    "plugins": ["expo-dev-client"]
+  }
 }
