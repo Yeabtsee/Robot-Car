@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Josi's Robot Car",
-    "slug": "josis-robot-car",
+    "name": "Robo Car",
+    "slug": "robo-car",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
-    "scheme": "josisrobotcar",
+    "scheme": "robocar",
     "assetBundlePatterns": ["**/*"],
     "android": {
       "package": "com.josi.robotcar",

@@ -130,7 +130,7 @@ const ConnectionScreen: React.FC<ConnectionScreenProps> = ({navigation}) => {
         <View style={styles.headerTop}>
           <Text style={styles.headerIcon}>🤖</Text>
           <View>
-            <Text style={styles.headerTitle}>Josi's Robot Car</Text>
+            <Text style={styles.headerTitle}>Robo Car</Text>
             <Text style={styles.headerSubtitle}>Bluetooth Controller</Text>
           </View>
         </View>
