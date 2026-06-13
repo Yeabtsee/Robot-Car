@@ -205,12 +205,24 @@ export const useBluetooth = (): UseBluetoothReturn => {
           }
 
           // connect() returns a boolean indicating success.
-          // We keep the targetDevice reference for subsequent operations
-          // (write, disconnect, isConnected) since it represents the
-          // active Bluetooth socket after connection.
-          const connected = await targetDevice.connect({
-            delimiter: '\r\n',
-          });
+          // We keep the targetDevice reference for subsequent operations.
+          // We try connecting with a secure socket first, then fallback to insecure (SECURE_SOCKET: false)
+          // since many Arduino modules (like HC-05/HC-06) do not support secure RFCOMM sockets.
+          let connected = false;
+          try {
+            connected = await targetDevice.connect({
+              connectorType: 'rfcomm',
+              delimiter: '\r\n',
+              secureSocket: true,
+            });
+          } catch (connectError) {
+            console.warn('[BT] Secure connection failed, trying insecure fallback:', connectError);
+            connected = await targetDevice.connect({
+              connectorType: 'rfcomm',
+              delimiter: '\r\n',
+              secureSocket: false,
+            });
+          }
 
           if (!connected) {
             throw new Error('Connection was not established.');
