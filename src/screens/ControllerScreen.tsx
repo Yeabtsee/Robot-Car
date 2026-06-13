@@ -17,7 +17,6 @@
  * If the Bluetooth connection drops unexpectedly, an Alert is shown
  * and the user is navigated back to the ConnectionScreen.
  */
-
 import React, {useState, useCallback, useEffect, useRef} from 'react';
 import {
   View,
@@ -35,6 +34,7 @@ import DPad from '../components/DPad';
 import FanToggle from '../components/FanToggle';
 import {COMMANDS} from '../constants/commands';
 import {RootStackParamList} from '../types';
+import {useTheme, ThemeColors} from '../context/ThemeContext';
 
 type ControllerScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Controller'>;
@@ -49,6 +49,8 @@ const Toast: React.FC<{message: string; visible: boolean}> = ({
   message,
   visible,
 }) => {
+  const {colors} = useTheme();
+  const styles = useStyles(colors);
   const translateY = useRef(new Animated.Value(-100)).current;
 
   useEffect(() => {
@@ -74,8 +76,8 @@ const Toast: React.FC<{message: string; visible: boolean}> = ({
 
   return (
     <Animated.View style={[styles.toast, {transform: [{translateY}]}]}>
-      <Text style={styles.toastIcon}>⚠️</Text>
-      <Text style={styles.toastText}>{message}</Text>
+      <Text style={styles.toastIcon}>⚠</Text>
+      <Text style={styles.toastText}>{message.toUpperCase()}</Text>
     </Animated.View>
   );
 };
@@ -84,6 +86,9 @@ const ControllerScreen: React.FC<ControllerScreenProps> = ({
   navigation,
   route,
 }) => {
+  const {theme, colors, toggleTheme} = useTheme();
+  const styles = useStyles(colors);
+
   const {deviceName, deviceAddress} = route.params;
   const {sendCommand, disconnect, connectionStatus} = useBluetoothContext();
 
@@ -230,7 +235,7 @@ const ControllerScreen: React.FC<ControllerScreenProps> = ({
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#0D0D1A" />
+      <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
 
       {/* Toast notification */}
       <Toast message={toastMessage} visible={toastVisible} />
@@ -251,18 +256,30 @@ const ControllerScreen: React.FC<ControllerScreenProps> = ({
               {deviceName}
             </Text>
             <Text style={styles.connectionLabel}>
-              {isConnected ? 'Connected' : 'Disconnected'}
+              {isConnected ? 'CONNECTED' : 'DISCONNECTED'}
             </Text>
           </View>
         </View>
 
-        <TouchableOpacity
-          style={styles.disconnectButton}
-          onPress={handleDisconnect}
-          activeOpacity={0.7}>
-          <Text style={styles.disconnectIcon}>⏏</Text>
-          <Text style={styles.disconnectText}>Disconnect</Text>
-        </TouchableOpacity>
+        <View style={styles.headerRight}>
+          {/* Theme Toggle */}
+          <TouchableOpacity
+            style={styles.themeToggle}
+            onPress={toggleTheme}
+            activeOpacity={0.7}>
+            <Text style={styles.themeToggleText}>
+              {theme === 'dark' ? '[ ☼ ]' : '[ ☾ ]'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.disconnectButton}
+            onPress={handleDisconnect}
+            activeOpacity={0.8}>
+            <Text style={styles.disconnectIcon}>⏏</Text>
+            <Text style={styles.disconnectText}>DISCONNECT</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Main control area */}
@@ -270,7 +287,7 @@ const ControllerScreen: React.FC<ControllerScreenProps> = ({
         {/* Last command display */}
         <View style={styles.commandDisplay}>
           <Text style={styles.commandLabel}>LAST COMMAND</Text>
-          <Text style={styles.commandValue}>{lastCommand}</Text>
+          <Text style={styles.commandValue}>{lastCommand.toUpperCase()}</Text>
         </View>
 
         {/* D-Pad */}
@@ -294,9 +311,9 @@ const ControllerScreen: React.FC<ControllerScreenProps> = ({
 
         {/* Safety hint */}
         <View style={styles.safetyHint}>
-          <Text style={styles.safetyIcon}>🛡️</Text>
+          <Text style={styles.safetyIcon}>⚠</Text>
           <Text style={styles.safetyText}>
-            Fan auto-enables before movement for safety
+            FAN AUTO-ENABLES BEFORE MOVEMENT
           </Text>
         </View>
       </View>
@@ -315,18 +332,18 @@ const ControllerScreen: React.FC<ControllerScreenProps> = ({
         />
         <Text style={styles.bottomBarText}>
           {isConnected
-            ? `Connected to ${deviceAddress}`
-            : 'Connection lost'}
+            ? `CONNECTED: ${deviceAddress}`
+            : 'CONNECTION LOST'}
         </Text>
       </View>
     </View>
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0D0D1A',
+    backgroundColor: colors.background,
   },
   // Toast styles
   toast: {
@@ -334,27 +351,32 @@ const styles = StyleSheet.create({
     top: 50,
     left: 24,
     right: 24,
-    backgroundColor: '#E17055',
+    backgroundColor: colors.toastBackground,
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.toastBorder,
     paddingHorizontal: 16,
     paddingVertical: 12,
     flexDirection: 'row',
     alignItems: 'center',
     zIndex: 100,
-    shadowColor: '#E17055',
+    shadowColor: colors.text,
     shadowOffset: {width: 0, height: 4},
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.1,
     shadowRadius: 8,
-    elevation: 10,
+    elevation: 4,
   },
   toastIcon: {
-    fontSize: 16,
+    fontSize: 14,
     marginRight: 8,
+    color: colors.toastText,
   },
   toastText: {
-    color: '#FFFFFF',
-    fontSize: 14,
+    color: colors.toastText,
+    fontSize: 12,
     fontWeight: '600',
+    fontFamily: 'monospace',
+    letterSpacing: 0.5,
     flex: 1,
   },
   // Header
@@ -364,58 +386,76 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 16,
-    backgroundColor: '#13132B',
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
+    backgroundColor: colors.background,
     borderBottomWidth: 1,
-    borderBottomColor: '#1E1E38',
+    borderBottomColor: colors.border,
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
   },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  themeToggle: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginRight: 12,
+  },
+  themeToggleText: {
+    fontSize: 16,
+    fontFamily: 'monospace',
+    color: colors.text,
+    fontWeight: 'bold',
+  },
   connectionDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
     marginRight: 12,
   },
   dotConnected: {
-    backgroundColor: '#00B894',
+    backgroundColor: colors.badgeDotEnabled,
   },
   dotDisconnected: {
-    backgroundColor: '#E17055',
+    backgroundColor: colors.badgeDotDisabled,
   },
   deviceName: {
     fontSize: 17,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: colors.text,
     maxWidth: 180,
   },
   connectionLabel: {
-    fontSize: 12,
-    color: '#8888AA',
+    fontSize: 11,
+    color: colors.textMuted,
     marginTop: 2,
+    fontFamily: 'monospace',
+    letterSpacing: 0.5,
   },
   disconnectButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(225, 112, 85, 0.15)',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 12,
+    backgroundColor: colors.card,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: 'rgba(225, 112, 85, 0.3)',
+    borderColor: colors.border,
   },
   disconnectIcon: {
-    fontSize: 14,
+    fontSize: 12,
     marginRight: 6,
+    color: colors.text,
   },
   disconnectText: {
-    color: '#E17055',
-    fontSize: 13,
+    color: colors.text,
+    fontSize: 12,
     fontWeight: '700',
+    fontFamily: 'monospace',
+    letterSpacing: 0.5,
   },
   // Control area
   controlArea: {
@@ -427,24 +467,25 @@ const styles = StyleSheet.create({
   commandDisplay: {
     alignItems: 'center',
     marginBottom: 16,
-    backgroundColor: '#1E1E2E',
+    backgroundColor: colors.card,
     paddingHorizontal: 24,
     paddingVertical: 10,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#2A2A3E',
+    borderColor: colors.border,
   },
   commandLabel: {
     fontSize: 10,
-    color: '#8888AA',
+    color: colors.textMuted,
     fontWeight: '700',
+    fontFamily: 'monospace',
     letterSpacing: 2,
     marginBottom: 4,
   },
   commandValue: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#A29BFE',
+    color: colors.text,
     fontFamily: 'monospace',
   },
   dpadContainer: {
@@ -460,19 +501,22 @@ const styles = StyleSheet.create({
     marginTop: 20,
     paddingHorizontal: 16,
     paddingVertical: 8,
-    backgroundColor: 'rgba(108, 92, 231, 0.1)',
+    backgroundColor: colors.card,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: 'rgba(108, 92, 231, 0.2)',
+    borderColor: colors.border,
   },
   safetyIcon: {
-    fontSize: 14,
+    fontSize: 12,
     marginRight: 8,
+    color: colors.text,
   },
   safetyText: {
-    fontSize: 12,
-    color: '#A29BFE',
+    fontSize: 11,
+    color: colors.textMuted,
     fontWeight: '500',
+    fontFamily: 'monospace',
+    letterSpacing: 0.5,
   },
   // Bottom status bar
   bottomBar: {
@@ -483,24 +527,26 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
   },
   bottomBarConnected: {
-    backgroundColor: 'rgba(0, 184, 148, 0.08)',
-    borderTopColor: 'rgba(0, 184, 148, 0.2)',
+    backgroundColor: colors.background,
+    borderTopColor: colors.border,
   },
   bottomBarDisconnected: {
-    backgroundColor: 'rgba(225, 112, 85, 0.08)',
-    borderTopColor: 'rgba(225, 112, 85, 0.2)',
+    backgroundColor: colors.background,
+    borderTopColor: colors.border,
   },
   bottomDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     marginRight: 8,
   },
   bottomBarText: {
-    fontSize: 12,
-    color: '#8888AA',
+    fontSize: 11,
+    color: colors.textMuted,
     fontWeight: '500',
     fontFamily: 'monospace',
+    letterSpacing: 0.5,
   },
 });
 

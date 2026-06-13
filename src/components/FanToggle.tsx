@@ -17,6 +17,7 @@ import {
   StyleSheet,
   Vibration,
 } from 'react-native';
+import {useTheme, ThemeColors} from '../context/ThemeContext';
 
 interface FanToggleProps {
   isOn: boolean;
@@ -29,12 +30,18 @@ const FanToggle: React.FC<FanToggleProps> = ({
   onToggle,
   disabled = false,
 }) => {
+  const {colors} = useTheme();
+  const styles = useStyles(colors);
+
   // Animation value for the toggle knob position
   const slideAnim = useRef(new Animated.Value(isOn ? 1 : 0)).current;
   // Animation value for the glow effect
   const glowAnim = useRef(new Animated.Value(isOn ? 1 : 0)).current;
   // Pulsating animation for the ON state
   const pulseAnim = useRef(new Animated.Value(1)).current;
+  // Spinning animation for the mechanical propeller icon
+  const spinAnim = useRef(new Animated.Value(0)).current;
+  const spinLoop = useRef<Animated.CompositeAnimation | null>(null);
 
   // Animate the toggle when state changes
   useEffect(() => {
@@ -57,7 +64,7 @@ const FanToggle: React.FC<FanToggleProps> = ({
       Animated.loop(
         Animated.sequence([
           Animated.timing(pulseAnim, {
-            toValue: 1.08,
+            toValue: 1.05,
             duration: 1200,
             useNativeDriver: true,
           }),
@@ -68,10 +75,26 @@ const FanToggle: React.FC<FanToggleProps> = ({
           }),
         ]),
       ).start();
+
+      // Spin propeller when active
+      spinAnim.setValue(0);
+      spinLoop.current = Animated.loop(
+        Animated.timing(spinAnim, {
+          toValue: 1,
+          duration: 1200,
+          useNativeDriver: true,
+        }),
+      );
+      spinLoop.current.start();
     } else {
       pulseAnim.setValue(1);
+      if (spinLoop.current) {
+        spinLoop.current.stop();
+        spinLoop.current = null;
+      }
+      spinAnim.setValue(0);
     }
-  }, [isOn, slideAnim, glowAnim, pulseAnim]);
+  }, [isOn, slideAnim, glowAnim, pulseAnim, spinAnim]);
 
   const handleToggle = () => {
     if (disabled) return;
@@ -82,7 +105,7 @@ const FanToggle: React.FC<FanToggleProps> = ({
   // Interpolate colors and positions
   const trackColor = glowAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: ['#2A2A3E', '#1A3A5C'],
+    outputRange: [colors.fanTrackOff, colors.fanTrackOn],
   });
 
   const knobTranslateX = slideAnim.interpolate({
@@ -92,12 +115,17 @@ const FanToggle: React.FC<FanToggleProps> = ({
 
   const knobColor = glowAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: ['#555566', '#00B4FF'],
+    outputRange: [colors.fanKnobOff, colors.fanKnobOn],
   });
 
   const borderColor = glowAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: ['#3D3D56', '#00B4FF'],
+    outputRange: [colors.fanBorderOff, colors.fanBorderOn],
+  });
+
+  const spin = spinAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
   });
 
   return (
@@ -107,11 +135,13 @@ const FanToggle: React.FC<FanToggleProps> = ({
         {transform: [{scale: pulseAnim}]},
         disabled && styles.containerDisabled,
       ]}>
-      {/* Fan icon */}
+      {/* Mechanical fan icon with rotation */}
       <View style={styles.labelRow}>
-        <Text style={[styles.fanIcon, isOn && styles.fanIconOn]}>
-          {isOn ? '🌀' : '💨'}
-        </Text>
+        <Animated.View style={{transform: [{rotate: spin}], marginRight: 8}}>
+          <Text style={[styles.fanIcon, isOn ? styles.fanIconOn : styles.fanIconOff]}>
+            ✇
+          </Text>
+        </Animated.View>
         <Text style={[styles.label, isOn && styles.labelOn]}>FAN</Text>
       </View>
 
@@ -149,15 +179,15 @@ const FanToggle: React.FC<FanToggleProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     alignItems: 'center',
     paddingVertical: 16,
     paddingHorizontal: 24,
-    backgroundColor: '#1E1E2E',
+    backgroundColor: colors.card,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#2A2A3E',
+    borderColor: colors.border,
   },
   containerDisabled: {
     opacity: 0.4,
@@ -169,19 +199,22 @@ const styles = StyleSheet.create({
   },
   fanIcon: {
     fontSize: 24,
-    marginRight: 8,
   },
   fanIconOn: {
-    // The emoji changes, no additional styling needed
+    color: colors.fanTextOn,
+  },
+  fanIconOff: {
+    color: colors.fanTextOff,
   },
   label: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '800',
-    color: '#8888AA',
+    color: colors.textMuted,
     letterSpacing: 3,
+    fontFamily: 'monospace',
   },
   labelOn: {
-    color: '#00B4FF',
+    color: colors.text,
   },
   track: {
     width: 84,
@@ -197,23 +230,24 @@ const styles = StyleSheet.create({
     borderRadius: 17,
     position: 'absolute',
     // Glow effect for the knob
-    shadowColor: '#00B4FF',
+    shadowColor: colors.text,
     shadowOffset: {width: 0, height: 0},
-    shadowOpacity: 0.5,
-    shadowRadius: 10,
-    elevation: 6,
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
   statusText: {
     marginTop: 10,
     fontSize: 14,
     fontWeight: '700',
     letterSpacing: 2,
+    fontFamily: 'monospace',
   },
   statusOn: {
-    color: '#00B4FF',
+    color: colors.text,
   },
   statusOff: {
-    color: '#555566',
+    color: colors.textMuted,
   },
 });
 

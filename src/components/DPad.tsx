@@ -15,6 +15,7 @@ import React, {useCallback} from 'react';
 import {View, Text, Pressable, StyleSheet, Vibration} from 'react-native';
 import {DirectionCommand} from '../types';
 import {COMMANDS} from '../constants/commands';
+import {useTheme, ThemeColors} from '../context/ThemeContext';
 
 interface DPadProps {
   onCommand: (command: string) => void;
@@ -46,6 +47,9 @@ const DirectionButton: React.FC<DirectionButtonProps> = ({
   disabled,
   style,
 }) => {
+  const {colors} = useTheme();
+  const styles = useStyles(colors);
+
   return (
     <Pressable
       onPressIn={() => {
@@ -66,12 +70,24 @@ const DirectionButton: React.FC<DirectionButtonProps> = ({
         pressed && styles.directionButtonPressed,
         disabled && styles.directionButtonDisabled,
       ]}>
-      <Text style={[styles.buttonIcon, disabled && styles.textDisabled]}>
-        {icon}
-      </Text>
-      <Text style={[styles.buttonLabel, disabled && styles.textDisabled]}>
-        {label}
-      </Text>
+      {({pressed}) => (
+        <>
+          <Text style={[
+            styles.buttonIcon,
+            pressed && styles.buttonIconPressed,
+            disabled && styles.textDisabled
+          ]}>
+            {icon}
+          </Text>
+          <Text style={[
+            styles.buttonLabel,
+            pressed && styles.buttonLabelPressed,
+            disabled && styles.textDisabled
+          ]}>
+            {label}
+          </Text>
+        </>
+      )}
     </Pressable>
   );
 };
@@ -82,6 +98,9 @@ const DPad: React.FC<DPadProps> = ({
   onBeforeMove,
   disabled = false,
 }) => {
+  const {colors} = useTheme();
+  const styles = useStyles(colors);
+
   /**
    * Handle directional button press.
    * Safety logic: calls onBeforeMove first to ensure fan is ON,
@@ -140,12 +159,24 @@ const DPad: React.FC<DPadProps> = ({
             pressed && styles.stopButtonPressed,
             disabled && styles.directionButtonDisabled,
           ]}>
-          <Text style={[styles.stopIcon, disabled && styles.textDisabled]}>
-            ■
-          </Text>
-          <Text style={[styles.stopLabel, disabled && styles.textDisabled]}>
-            STOP
-          </Text>
+          {({pressed}) => (
+            <>
+              <Text style={[
+                styles.stopIcon,
+                disabled && styles.textDisabled,
+                disabled && {color: colors.textMuted}
+              ]}>
+                ■
+              </Text>
+              <Text style={[
+                styles.stopLabel,
+                disabled && styles.textDisabled,
+                disabled && {color: colors.textMuted}
+              ]}>
+                STOP
+              </Text>
+            </>
+          )}
         </Pressable>
 
         <DirectionButton
@@ -176,7 +207,7 @@ const DPad: React.FC<DPadProps> = ({
 
 const BUTTON_SIZE = 76; // Minimum 70px touch targets as per spec
 
-const styles = StyleSheet.create({
+const useStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -191,29 +222,29 @@ const styles = StyleSheet.create({
     width: BUTTON_SIZE,
     height: BUTTON_SIZE,
     borderRadius: BUTTON_SIZE / 2,
-    backgroundColor: '#2A2A3E',
+    backgroundColor: colors.card,
     justifyContent: 'center',
     alignItems: 'center',
     margin: 6,
-    borderWidth: 2,
-    borderColor: '#3D3D56',
+    borderWidth: 1.5,
+    borderColor: colors.border,
     // Depth effect
-    shadowColor: '#6C5CE7',
+    shadowColor: colors.text,
     shadowOffset: {width: 0, height: 0},
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   directionButtonPressed: {
-    backgroundColor: '#6C5CE7',
-    borderColor: '#A29BFE',
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
     transform: [{scale: 0.92}],
-    shadowOpacity: 0.6,
-    shadowRadius: 16,
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
   },
   directionButtonDisabled: {
-    backgroundColor: '#1A1A28',
-    borderColor: '#2A2A3E',
+    backgroundColor: colors.buttonDisabledBg,
+    borderColor: colors.buttonDisabledBorder,
     shadowOpacity: 0,
     elevation: 0,
   },
@@ -222,49 +253,57 @@ const styles = StyleSheet.create({
   },
   buttonIcon: {
     fontSize: 22,
-    color: '#E4E4F0',
+    color: colors.text,
     marginBottom: 2,
+  },
+  buttonIconPressed: {
+    color: colors.primaryText,
   },
   buttonLabel: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#8888AA',
+    color: colors.textMuted,
     letterSpacing: 1,
+    fontFamily: 'monospace',
+  },
+  buttonLabelPressed: {
+    color: colors.primaryText,
   },
   stopButton: {
     width: BUTTON_SIZE,
     height: BUTTON_SIZE,
     borderRadius: BUTTON_SIZE / 2,
-    backgroundColor: '#E17055',
+    backgroundColor: colors.stopButtonBg,
     justifyContent: 'center',
     alignItems: 'center',
     margin: 6,
-    borderWidth: 2,
-    borderColor: '#E17055',
-    shadowColor: '#E17055',
+    borderWidth: 1.5,
+    borderColor: colors.stopButtonBorder,
+    shadowColor: colors.stopButtonBg,
     shadowOffset: {width: 0, height: 0},
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 4,
   },
   stopButtonPressed: {
-    backgroundColor: '#D63031',
-    borderColor: '#FF7675',
+    backgroundColor: colors.stopButtonPressedBg,
+    borderColor: colors.stopButtonPressedBg,
     transform: [{scale: 0.92}],
   },
   stopIcon: {
     fontSize: 18,
-    color: '#FFFFFF',
+    color: colors.primaryText,
     marginBottom: 2,
   },
   stopLabel: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: colors.primaryText,
     letterSpacing: 1,
+    fontFamily: 'monospace',
   },
   textDisabled: {
-    opacity: 0.3,
+    opacity: 0.2,
   },
 });
 

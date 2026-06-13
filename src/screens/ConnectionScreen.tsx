@@ -24,12 +24,16 @@ import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {useBluetoothContext} from '../context/BluetoothContext';
 import DeviceListItem from '../components/DeviceListItem';
 import {BluetoothDeviceInfo, RootStackParamList, ConnectionStatus} from '../types';
+import {useTheme, ThemeColors} from '../context/ThemeContext';
 
 type ConnectionScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Connection'>;
 };
 
 const ConnectionScreen: React.FC<ConnectionScreenProps> = ({navigation}) => {
+  const {theme, colors, toggleTheme} = useTheme();
+  const styles = useStyles(colors);
+
   const {
     devices,
     connectionStatus,
@@ -109,12 +113,10 @@ const ConnectionScreen: React.FC<ConnectionScreenProps> = ({navigation}) => {
         onConnect={handleConnect}
       />
     );
-  };
-
-  const renderEmptyList = () => (
+  };  const renderEmptyList = () => (
     <View style={styles.emptyContainer}>
-      <Text style={styles.emptyIcon}>📱</Text>
-      <Text style={styles.emptyTitle}>No Paired Devices Found</Text>
+      <Text style={styles.emptyIcon}>Ø</Text>
+      <Text style={styles.emptyTitle}>NO DEVICES FOUND</Text>
       <Text style={styles.emptySubtitle}>
         Pair your HC-05/HC-06 Bluetooth module in{'\n'}Android Settings → Bluetooth first.
       </Text>
@@ -123,16 +125,25 @@ const ConnectionScreen: React.FC<ConnectionScreenProps> = ({navigation}) => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#0D0D1A" />
+      <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
 
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerTop}>
-          <Text style={styles.headerIcon}>🤖</Text>
-          <View>
-            <Text style={styles.headerTitle}>Robo Car</Text>
-            <Text style={styles.headerSubtitle}>Bluetooth Controller</Text>
+          <View style={styles.titleContainer}>
+            <Text style={styles.headerTitle}>ROBO CAR</Text>
+            <Text style={styles.headerSubtitle}>[ BLUETOOTH CONTROL ]</Text>
           </View>
+
+          {/* Theme Toggle */}
+          <TouchableOpacity
+            style={styles.themeToggle}
+            onPress={toggleTheme}
+            activeOpacity={0.7}>
+            <Text style={styles.themeToggleText}>
+              {theme === 'dark' ? '[ ☼ ]' : '[ ☾ ]'}
+            </Text>
+          </TouchableOpacity>
         </View>
 
         {/* Bluetooth status badge */}
@@ -148,7 +159,7 @@ const ConnectionScreen: React.FC<ConnectionScreenProps> = ({navigation}) => {
             ]}
           />
           <Text style={styles.statusText}>
-            {isBluetoothEnabled ? 'Bluetooth ON' : 'Bluetooth OFF'}
+            {isBluetoothEnabled ? 'BLUETOOTH ON' : 'BLUETOOTH OFF'}
           </Text>
         </View>
       </View>
@@ -158,16 +169,15 @@ const ConnectionScreen: React.FC<ConnectionScreenProps> = ({navigation}) => {
         style={styles.scanButton}
         onPress={handleRescan}
         disabled={isScanning}
-        activeOpacity={0.7}>
+        activeOpacity={0.8}>
         {isScanning ? (
           <View style={styles.scanButtonContent}>
-            <ActivityIndicator size="small" color="#FFFFFF" />
-            <Text style={styles.scanButtonText}>Scanning...</Text>
+            <ActivityIndicator size="small" color={colors.buttonDefaultText} style={{marginRight: 8}} />
+            <Text style={styles.scanButtonText}>SCANNING...</Text>
           </View>
         ) : (
           <View style={styles.scanButtonContent}>
-            <Text style={styles.scanButtonIcon}>🔍</Text>
-            <Text style={styles.scanButtonText}>Scan Paired Devices</Text>
+            <Text style={styles.scanButtonText}>SCAN DEVICES</Text>
           </View>
         )}
       </TouchableOpacity>
@@ -175,7 +185,7 @@ const ConnectionScreen: React.FC<ConnectionScreenProps> = ({navigation}) => {
       {/* Device count */}
       {devices.length > 0 && (
         <Text style={styles.deviceCount}>
-          {devices.length} device{devices.length !== 1 ? 's' : ''} found
+          {devices.length} DEVICE{devices.length !== 1 ? 'S' : ''} FOUND
         </Text>
       )}
 
@@ -192,109 +202,121 @@ const ConnectionScreen: React.FC<ConnectionScreenProps> = ({navigation}) => {
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0D0D1A',
+    backgroundColor: colors.background,
   },
   header: {
     paddingTop: 20,
     paddingHorizontal: 24,
     paddingBottom: 20,
-    backgroundColor: '#13132B',
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
+    backgroundColor: colors.background,
     borderBottomWidth: 1,
-    borderBottomColor: '#1E1E38',
+    borderBottomColor: colors.border,
   },
   headerTop: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16,
   },
-  headerIcon: {
-    fontSize: 36,
-    marginRight: 14,
+  titleContainer: {
+    flex: 1,
+  },
+  themeToggle: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  themeToggleText: {
+    fontSize: 16,
+    fontFamily: 'monospace',
+    color: colors.text,
+    fontWeight: 'bold',
   },
   headerTitle: {
     fontSize: 24,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    letterSpacing: 0.5,
+    fontWeight: '900',
+    color: colors.text,
+    letterSpacing: 2,
   },
   headerSubtitle: {
-    fontSize: 14,
-    color: '#8888AA',
-    marginTop: 2,
+    fontSize: 11,
+    fontFamily: 'monospace',
+    color: colors.textMuted,
+    marginTop: 4,
+    letterSpacing: 1,
   },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 6,
     borderWidth: 1,
   },
   statusEnabled: {
-    backgroundColor: 'rgba(0, 184, 148, 0.15)',
-    borderColor: 'rgba(0, 184, 148, 0.3)',
+    backgroundColor: 'transparent',
+    borderColor: colors.badgeDotEnabled,
   },
   statusDisabled: {
-    backgroundColor: 'rgba(225, 112, 85, 0.15)',
-    borderColor: 'rgba(225, 112, 85, 0.3)',
+    backgroundColor: 'transparent',
+    borderColor: colors.badgeBorder,
   },
   statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     marginRight: 8,
   },
   dotEnabled: {
-    backgroundColor: '#00B894',
+    backgroundColor: colors.badgeDotEnabled,
   },
   dotDisabled: {
-    backgroundColor: '#E17055',
+    backgroundColor: colors.badgeDotDisabled,
   },
   statusText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#E4E4F0',
+    fontSize: 10,
+    fontWeight: '700',
+    color: colors.text,
+    fontFamily: 'monospace',
+    letterSpacing: 0.5,
   },
   scanButton: {
     marginHorizontal: 24,
     marginTop: 20,
     paddingVertical: 14,
-    backgroundColor: '#6C5CE7',
-    borderRadius: 16,
+    backgroundColor: colors.buttonDefaultBg,
+    borderRadius: 12,
     alignItems: 'center',
-    shadowColor: '#6C5CE7',
-    shadowOffset: {width: 0, height: 4},
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowColor: colors.text,
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: colors.buttonDefaultBorder,
   },
   scanButtonContent: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  scanButtonIcon: {
-    fontSize: 16,
-    marginRight: 8,
-  },
   scanButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
+    color: colors.buttonDefaultText,
+    fontSize: 14,
     fontWeight: '700',
+    fontFamily: 'monospace',
+    letterSpacing: 1,
   },
   deviceCount: {
     marginHorizontal: 24,
     marginTop: 20,
     marginBottom: 8,
-    fontSize: 13,
-    color: '#8888AA',
-    fontWeight: '600',
-    textTransform: 'uppercase',
+    fontSize: 11,
+    color: colors.textMuted,
+    fontWeight: '700',
+    fontFamily: 'monospace',
     letterSpacing: 1,
   },
   listContainer: {
@@ -309,20 +331,24 @@ const styles = StyleSheet.create({
     paddingTop: 60,
   },
   emptyIcon: {
-    fontSize: 48,
-    marginBottom: 16,
+    fontSize: 32,
+    color: colors.textMuted,
+    fontFamily: 'monospace',
+    marginBottom: 12,
   },
   emptyTitle: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: '700',
-    color: '#E4E4F0',
+    color: colors.text,
+    fontFamily: 'monospace',
+    letterSpacing: 1,
     marginBottom: 8,
   },
   emptySubtitle: {
-    fontSize: 14,
-    color: '#8888AA',
+    fontSize: 12,
+    color: colors.textMuted,
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: 18,
   },
 });
 

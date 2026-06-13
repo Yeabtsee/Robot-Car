@@ -14,6 +14,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import {BluetoothDeviceInfo, ConnectionStatus} from '../types';
+import {useTheme, ThemeColors} from '../context/ThemeContext';
 
 interface DeviceListItemProps {
   device: BluetoothDeviceInfo;
@@ -28,6 +29,9 @@ const DeviceListItem: React.FC<DeviceListItemProps> = ({
   isConnecting,
   onConnect,
 }) => {
+  const {colors} = useTheme();
+  const styles = useStyles(colors);
+
   const isThisDeviceConnecting = isConnecting;
   const isThisDeviceConnected = connectionStatus === 'connected';
 
@@ -45,11 +49,18 @@ const DeviceListItem: React.FC<DeviceListItemProps> = ({
     return [styles.button, styles.buttonDefault];
   };
 
+  const getButtonTextStyle = () => {
+    if (isThisDeviceConnected) return [styles.buttonText, styles.buttonTextConnected];
+    if (connectionStatus === 'failed') return [styles.buttonText, styles.buttonTextFailed];
+    if (isThisDeviceConnecting) return [styles.buttonText, styles.buttonTextConnecting];
+    return [styles.buttonText, styles.buttonTextDefault];
+  };
+
   return (
     <View style={styles.container}>
       {/* Bluetooth icon indicator */}
       <View style={styles.iconContainer}>
-        <Text style={styles.icon}>📡</Text>
+        <Text style={styles.icon}>🔵</Text>
       </View>
 
       {/* Device info */}
@@ -67,43 +78,45 @@ const DeviceListItem: React.FC<DeviceListItemProps> = ({
         disabled={isThisDeviceConnecting || isThisDeviceConnected}
         activeOpacity={0.7}>
         {isThisDeviceConnecting ? (
-          <ActivityIndicator size="small" color="#FFFFFF" />
+          <ActivityIndicator size="small" color={colors.buttonDisabledText} />
         ) : (
-          <Text style={styles.buttonText}>{getButtonText()}</Text>
+          <Text style={getButtonTextStyle()}>{getButtonText()}</Text>
         )}
       </TouchableOpacity>
     </View>
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1E1E2E',
+    backgroundColor: colors.card,
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#2A2A3E',
-    // Subtle shadow for depth
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 4,
+    borderColor: colors.border,
+    shadowColor: colors.text,
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
   },
   iconContainer: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#2A2A3E',
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 14,
   },
   icon: {
-    fontSize: 20,
+    fontSize: 16,
+    color: colors.text,
   },
   infoContainer: {
     flex: 1,
@@ -111,39 +124,58 @@ const styles = StyleSheet.create({
   },
   deviceName: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#E4E4F0',
+    fontWeight: '700',
+    color: colors.text,
     marginBottom: 4,
   },
   deviceAddress: {
     fontSize: 12,
-    color: '#8888AA',
+    color: colors.textMuted,
     fontFamily: 'monospace',
   },
   button: {
-    paddingHorizontal: 18,
+    paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 12,
-    minWidth: 100,
+    minWidth: 110,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
   },
   buttonDefault: {
-    backgroundColor: '#6C5CE7',
+    backgroundColor: colors.buttonDefaultBg,
+    borderColor: colors.buttonDefaultBorder,
   },
   buttonConnecting: {
-    backgroundColor: '#A29BFE',
+    backgroundColor: colors.background,
+    borderColor: colors.border,
   },
   buttonConnected: {
-    backgroundColor: '#00B894',
+    backgroundColor: colors.background,
+    borderColor: colors.primary,
   },
   buttonFailed: {
-    backgroundColor: '#E17055',
+    backgroundColor: colors.card,
+    borderColor: colors.border,
   },
   buttonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '700',
+    fontFamily: 'monospace',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  buttonTextDefault: {
+    color: colors.buttonDefaultText,
+  },
+  buttonTextConnecting: {
+    color: colors.buttonDisabledText,
+  },
+  buttonTextConnected: {
+    color: colors.text,
+  },
+  buttonTextFailed: {
+    color: colors.text,
   },
 });
 
